@@ -1,6 +1,10 @@
-dts-dirs += apm
-dts-dirs += arm
-dts-dirs += cavium
-dts-dirs += hisilicon
+dtb-$(CONFIG_ARCH_THUNDER) += thunder-88xx.dtb
+dtb-$(CONFIG_ARCH_VEXPRESS) += rtsm_ve-aemv8a.dtb foundation-v8.dtb
+dtb-$(CONFIG_ARCH_XGENE) += apm-mustang.dtb
 
-subdir-y	:= $(dts-dirs)
+targets += dtbs
+targets += $(dtb-y)
+
+dtbs: $(addprefix $(obj)/, $(dtb-y))
+
+clean-files := *.dtb

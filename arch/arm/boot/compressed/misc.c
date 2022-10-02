@@ -158,10 +158,11 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
 
 	arch_decomp_setup();
 
+	putstr("Uncompressing Linux...");
 	ret = do_decompress(input_data, input_data_end - input_data,
 			    output_data, error);
 	if (ret)
-		error("");
+		error("decompressor returned an error");
 	else
-		putstr("\n");
+		putstr(" done, booting the kernel.\n");
 }

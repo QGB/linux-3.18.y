@@ -31,14 +31,6 @@
 #include <sound/initval.h>
 #include <linux/kmod.h>
 #include <linux/mutex.h>
-#if defined CONFIG_ANDROID && defined CONFIG_SWITCH
-#include <linux/switch.h>
-#endif
-
-#if defined CONFIG_ANDROID && defined CONFIG_SWITCH
-struct switch_dev g_stusbdev;
-EXPORT_SYMBOL(g_stusbdev);
-#endif
 
 static int major = CONFIG_SND_MAJOR;
 int snd_major;
@@ -480,23 +472,11 @@ static int __init alsa_sound_init(void)
 #ifndef MODULE
 	pr_info("Advanced Linux Sound Architecture Driver Initialized.\n");
 #endif
-
-#if defined CONFIG_ANDROID && defined CONFIG_SWITCH
-		g_stusbdev.name = "h2w";
-		if (switch_dev_register(&g_stusbdev)) {
-			printk(KERN_ERR "error registering switch device");
-			return -EINVAL;
-		}
-#endif
-
 	return 0;
 }
 
 static void __exit alsa_sound_exit(void)
 {
-#if defined CONFIG_ANDROID && defined CONFIG_SWITCH
-	switch_dev_unregister(&g_stusbdev);
-#endif
 	snd_info_minor_unregister();
 	snd_info_done();
 	unregister_chrdev(major, "alsa");

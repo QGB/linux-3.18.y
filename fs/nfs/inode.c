@@ -496,7 +496,7 @@ nfs_setattr(struct dentry *dentry, struct iattr *attr)
 {
 	struct inode *inode = dentry->d_inode;
 	struct nfs_fattr *fattr;
-	int error;
+	int error = -ENOMEM;
 
 	nfs_inc_stats(inode, NFSIOS_VFSSETATTR);
 
@@ -524,16 +524,9 @@ nfs_setattr(struct dentry *dentry, struct iattr *attr)
 		nfs_wb_all(inode);
 	}
 
-	/* XXX Can we assume the server's permission checks are sufficient? */
-	error = setattr_killpriv(dentry, attr);
-	if (error)
-		goto out;
-
 	fattr = nfs_alloc_fattr();
-	if (fattr == NULL) {
-		error = -ENOMEM;
+	if (fattr == NULL)
 		goto out;
-	}
 	/*
 	 * Return any delegations if we're going to change ACLs
 	 */

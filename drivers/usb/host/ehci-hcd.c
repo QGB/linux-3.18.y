@@ -49,7 +49,6 @@
 #include <asm/firmware.h>
 #endif
 
-#include <linux/hisilicon/hiotg.h>
 /*-------------------------------------------------------------------------*/
 
 /*
@@ -778,8 +777,6 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 				continue;
 			pstatus = ehci_readl(ehci,
 					 &ehci->regs->port_status[i]);
-
-			set_usbhost_connect(hcd, i, pstatus & PORT_CONNECT, 0);
 
 			if (pstatus & PORT_OWNER)
 				continue;

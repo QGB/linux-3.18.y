@@ -6,14 +6,6 @@
 #include <linux/poison.h>
 #include <linux/ratelimit.h>
 
-#ifdef CONFIG_PAGEALLOC_LOCK
-extern void dbg_unlock_page(struct page *page, void *addr);
-extern void dbg_lock_page(struct page *page, void *addr);
-#else
-void dbg_unlock_page(struct page *page, void *addr) {};
-void dbg_lock_page(struct page *page, void *addr) {};
-#endif
-
 static inline void set_page_poison(struct page *page)
 {
 	__set_bit(PAGE_DEBUG_FLAG_POISON, &page->debug_flags);
@@ -35,9 +27,6 @@ static void poison_page(struct page *page)
 
 	set_page_poison(page);
 	memset(addr, PAGE_POISON, PAGE_SIZE);
-
-	dbg_lock_page(page, addr);
-
 	kunmap_atomic(addr);
 }
 
@@ -91,9 +80,6 @@ static void unpoison_page(struct page *page)
 		return;
 
 	addr = kmap_atomic(page);
-
-	dbg_unlock_page(page, addr);
-
 	check_poison_mem(addr, PAGE_SIZE);
 	clear_page_poison(page);
 	kunmap_atomic(addr);

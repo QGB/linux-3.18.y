@@ -23,9 +23,6 @@
 #include "xhci-mvebu.h"
 #include "xhci-rcar.h"
 
-/* set irq affinity to cpu2 when multi-processor */
-#define XHCI_IRQ_AFFINITY_CPU		2
-
 static struct hc_driver __read_mostly xhci_plat_hc_driver;
 
 static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
@@ -76,7 +73,6 @@ static int xhci_plat_probe(struct platform_device *pdev)
 	struct clk              *clk;
 	int			ret;
 	int			irq;
-	struct cpumask cpumask;
 
 	if (usb_disabled())
 		return -ENODEV;
@@ -166,14 +162,6 @@ static int xhci_plat_probe(struct platform_device *pdev)
 	if (ret)
 		goto put_usb3_hcd;
 
-	/* set irq affinity */
-	if ((num_online_cpus() > XHCI_IRQ_AFFINITY_CPU) &&
-		cpu_online(XHCI_IRQ_AFFINITY_CPU)) {
-		cpumask_clear(&cpumask);
-		cpumask_set_cpu(XHCI_IRQ_AFFINITY_CPU, &cpumask);
-		irq_set_affinity(irq, &cpumask);
-	}
-
 	return 0;
 
 put_usb3_hcd:
@@ -215,8 +203,6 @@ static int xhci_plat_suspend(struct device *dev)
 {
 	struct usb_hcd	*hcd = dev_get_drvdata(dev);
 	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
-	struct clk *clk = xhci->clk;
-	int rc;
 
 	/*
 	 * xhci_suspend() needs `do_wakeup` to know whether host is allowed
@@ -226,24 +212,13 @@ static int xhci_plat_suspend(struct device *dev)
 	 * reconsider this when xhci_plat_suspend enlarges its scope, e.g.,
 	 * also applies to runtime suspend.
 	 */
-	rc = xhci_suspend(xhci, device_may_wakeup(dev));
-	if (!IS_ERR(clk))
-		clk_disable_unprepare(clk);
-	return rc;
+	return xhci_suspend(xhci, device_may_wakeup(dev));
 }
 
 static int xhci_plat_resume(struct device *dev)
 {
 	struct usb_hcd	*hcd = dev_get_drvdata(dev);
 	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
-	struct clk *clk = xhci->clk;
-	int rc;
-
-	if (!IS_ERR(clk)) {
-		rc = clk_prepare_enable(clk);
-		if (rc)
-			return rc;
-	}
 
 	return xhci_resume(xhci, 0);
 }

@@ -105,6 +105,7 @@ static int generic_bL_remove(struct platform_device *pdev)
 static struct platform_driver generic_bL_platdrv = {
 	.driver = {
 		.name	= "arm-bL-cpufreq-dt",
+		.owner	= THIS_MODULE,
 	},
 	.probe		= generic_bL_probe,
 	.remove		= generic_bL_remove,

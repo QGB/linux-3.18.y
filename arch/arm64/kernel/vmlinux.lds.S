@@ -8,7 +8,6 @@
 #include <asm/thread_info.h>
 #include <asm/memory.h>
 #include <asm/page.h>
-#include <asm/pgtable.h>
 
 #include "image.h"
 
@@ -33,30 +32,6 @@ jiffies = jiffies_64;
 	*(.hyp.text)					\
 	VMLINUX_SYMBOL(__hyp_text_end) = .;
 
-/*
- * The size of the PE/COFF section that covers the kernel image, which
- * runs from stext to _edata, must be a round multiple of the PE/COFF
- * FileAlignment, which we set to its minimum value of 0x200. 'stext'
- * itself is 4 KB aligned, so padding out _edata to a 0x200 aligned
- * boundary should be sufficient.
- */
-PECOFF_FILE_ALIGNMENT = 0x200;
-
-#ifdef CONFIG_EFI
-#define PECOFF_EDATA_PADDING	\
-	.pecoff_edata_padding : { BYTE(0); . = ALIGN(PECOFF_FILE_ALIGNMENT); }
-#else
-#define PECOFF_EDATA_PADDING
-#endif
-
-#ifdef CONFIG_DEBUG_ALIGN_RODATA
-#define ALIGN_DEBUG_RO			. = ALIGN(1<<SECTION_SHIFT);
-#define ALIGN_DEBUG_RO_MIN(min)		ALIGN_DEBUG_RO
-#else
-#define ALIGN_DEBUG_RO
-#define ALIGN_DEBUG_RO_MIN(min)		. = ALIGN(min);
-#endif
-
 SECTIONS
 {
 	/*
@@ -79,7 +54,6 @@ SECTIONS
 		_text = .;
 		HEAD_TEXT
 	}
-	ALIGN_DEBUG_RO
 	.text : {			/* Real text segment		*/
 		_stext = .;		/* Text and read-only data	*/
 			__exception_text_start = .;
@@ -96,22 +70,19 @@ SECTIONS
 		*(.got)			/* Global offset table		*/
 	}
 
-	ALIGN_DEBUG_RO
 	RO_DATA(PAGE_SIZE)
 	EXCEPTION_TABLE(8)
 	NOTES
-	ALIGN_DEBUG_RO
 	_etext = .;			/* End of text and rodata section */
 
-	ALIGN_DEBUG_RO_MIN(PAGE_SIZE)
+	. = ALIGN(PAGE_SIZE);
 	__init_begin = .;
 
 	INIT_TEXT_SECTION(8)
 	.exit.text : {
 		ARM_EXIT_KEEP(EXIT_TEXT)
 	}
-
-	ALIGN_DEBUG_RO_MIN(16)
+	. = ALIGN(16);
 	.init.data : {
 		INIT_DATA
 		INIT_SETUP(16)
@@ -143,7 +114,6 @@ SECTIONS
 	_data = .;
 	_sdata = .;
 	RW_DATA_SECTION(64, PAGE_SIZE, THREAD_SIZE)
-	PECOFF_EDATA_PADDING
 	_edata = .;
 
 	BSS_SECTION(0, 0, 0)

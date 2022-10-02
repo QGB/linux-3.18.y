@@ -45,9 +45,7 @@
 #include <linux/usb/audio.h>
 #include <linux/usb/audio-v2.h>
 #include <linux/module.h>
-#if defined CONFIG_ANDROID && defined CONFIG_SWITCH
-#include <linux/switch.h>
-#endif
+
 #include <sound/control.h>
 #include <sound/core.h>
 #include <sound/info.h>
@@ -74,12 +72,8 @@ MODULE_DESCRIPTION("USB Audio");
 MODULE_LICENSE("GPL");
 MODULE_SUPPORTED_DEVICE("{{Generic,USB Audio}}");
 
-#if defined CONFIG_ANDROID && defined CONFIG_SWITCH
-static int g_switchregisted = false;
-static int index[SNDRV_CARDS] = {2,3,4,5,6,7,8,9};
-#else
+
 static int index[SNDRV_CARDS] = SNDRV_DEFAULT_IDX;	/* Index 0-MAX */
-#endif
 static char *id[SNDRV_CARDS] = SNDRV_DEFAULT_STR;	/* ID for this card */
 static bool enable[SNDRV_CARDS] = SNDRV_DEFAULT_ENABLE_PNP;/* Enable this card */
 /* Vendor/product IDs for this card */
@@ -115,15 +109,6 @@ MODULE_PARM_DESC(autoclock, "Enable auto-clock selection for UAC2 devices (defau
 static DEFINE_MUTEX(register_mutex);
 static struct snd_usb_audio *usb_chip[SNDRV_CARDS];
 static struct usb_driver usb_audio_driver;
-
-#if defined CONFIG_ANDROID && defined CONFIG_SWITCH
-enum {
-	state_usbcard_disconnected = 0,
-	state_usbcard_connected = 1
-};
-
-extern struct switch_dev g_stusbdev;
-#endif
 
 /*
  * disconnect streams
@@ -580,16 +565,6 @@ snd_usb_audio_probe(struct usb_device *dev,
 		goto __error;
 	}
 
-#if defined CONFIG_ANDROID && defined CONFIG_SWITCH
-	/*
-	 * not sure how to distinguish analog/digital/unknown,
-	 * assume digital for now
-	 */
-	if (0 == chip->index) {
-		switch_set_state(&g_stusbdev, state_usbcard_connected);
-	}
-#endif
-
 	usb_chip[chip->index] = chip;
 	chip->num_interfaces++;
 	chip->probing = 0;
@@ -631,11 +606,6 @@ static void snd_usb_audio_disconnect(struct usb_device *dev,
 	if (!was_shutdown) {
 		struct snd_usb_endpoint *ep;
 
-#if defined CONFIG_ANDROID && defined CONFIG_SWITCH
-		if (0 == chip->index) {
-			switch_set_state(&g_stusbdev, state_usbcard_disconnected);
-		}
-#endif
 		snd_card_disconnect(card);
 		/* release the pcm resources */
 		list_for_each(p, &chip->pcm_list) {
